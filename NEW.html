@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>房地合一稅與房貸試算工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #81D8D1;
+            padding: 20px;
+            color: black;  /* 加入這一行將預設文字顏色設為黑色 */
+        }
+        .container {
+            background-color: #81D8D1;
+            padding: 20px;
+            border-radius: 5px;
+            color: black;  /* 將container內的文字顏色設為黑色 */
+            display: none;
+        }
+        .active {
+            display: block;
+        }
+        label, input, button, span, select {
+            margin-bottom: 10px;
+        }
+        button, .tablink {
+            background-color: #E0E0E0;  /* Light background */
+            color: #333;  /* Dark text */
+            display: inline-block;
+            margin-right: 10px;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .tablink.active {
+            background-color: #333;  /* Dark background */
+            color: #E0E0E0;  /* Light text */
+        }
+        button:hover, .tablink:hover {
+            background-color: #B0B0B0;
+            color: #FFF;
+        }
+    </style>
+</head>
+<body>
+    <button class="tablink" onclick="openTab('Loan', this)">房貸試算</button>
+    <button class="tablink" onclick="openTab('Tax', this)">房地合一2.0的計算</button>
+    <button class="tablink" onclick="openTab('RentalIncome', this)">房屋租賃所得稅試算</button>
+    <div style="margin-top: 20px;">作者:【賣厝阿彬】 LINE官方帳號 @a-bin</div>
+
+<div id="Loan" class="container active">
+    <h2>房貸試算</h2>
+    本金(萬): <input type="number" id="P"><br>
+    利率(%): <input type="number" id="r" step="0.01"><br>
+    貸款期間(年): <input type="number" id="n"><br>
+    <button onclick="calculateLoan()">計算</button>
+    <br>
+    每月還款金額(萬): <span id="M">0.00</span><br>
+    每月利息(萬): <span id="I">0.00</span><br>
+    每月本金(萬): <span id="C">0.00</span><br>
+    期滿總還款金額(萬): <span id="Total">0.00</span><br>
+</div>
+
+<div id="Tax" class="container">
+    <h2>房地合一2.0的計算</h2>
+    房地用途: <select id="property_type">
+                <option value="境內-非自住">境內-非自住</option>
+                <option value="境內-自住">境內-自住</option>
+                <option value="境內-非自願等">境內-非自願等</option>
+             </select><br>
+    購買登記日: <input type="date" id="purchase_date"><br>
+    出售登記日: <input type="date" id="sale_date"><br>
+    購入價格(萬): <input type="number" id="purchase_price"><br>
+    出售價格(萬): <input type="number" id="sale_price"><br>
+    相關費用(萬): <input type="number" id="fees"><br>
+    土地漲價總額(萬): <input type="number" id="land_increase"><br>
+    連續自住年份（自住選項才需填寫）: <input type="number" id="continuous_residence_years"><br>
+    <button onclick="calculateTax()">計算</button>
+    <br>
+    獲利金額(萬): <span id="profit">0.00</span><br>
+    適用稅率(%): <span id="rate">0</span><br>
+    應納稅額(萬): <span id="tax_due">0.00</span><br>
+</div>
+
+<div id="RentalIncome" class="container">
+    <h2>房屋租賃所得稅試算</h2>
+    租賃所得計算選單: 
+    <select id="income_type">
+        <option value="standard">標準申報</option>
+        <option value="itemized">列舉申報</option>
+    </select><br>
+    每月租金(萬): <input type="number" id="monthly_rent"><br>
+    適用綜合所得稅率: 
+    <select id="tax_rate">
+        <option value="0.05">5%</option>
+        <option value="0.12">12%</option>
+        <option value="0.20">20%</option>
+        <option value="0.30">30%</option>
+        <option value="0.40">40%</option>
+    </select><br>
+    租屋成本(萬): <input type="number" id="rental_costs" value="0"><br>
+    <button onclick="calculateRentalIncomeTax()">計算</button>
+    <br>
+    租賃所得(萬): <span id="rental_income">0.00</span><br>
+    租賃所得稅額(萬): <span id="rental_tax_due">0.00</span><br>
+<p>
+    <strong>標準申報:</strong> 全年租金收入－(全年租金收入× 43% ) × 綜合所得稅率<br>
+    <strong>列舉申報:</strong> 租賃所得 = 全年租金收入－租屋成本 × 綜合所得稅率<br>
+    列舉申報需準備以下單據:<br>
+    房屋折舊： 按照房屋耐用年限攤提計算，需保留買房的發票或收據、房屋稅單<br>
+    修繕費： 泥作、木工或水電開立的發票或收據<br>
+    房屋稅與地價稅： 稅單影本<br>
+    購屋貸款利息： 權狀影本、貸款證明影本<br>
+    保險費 (火險、地震險) ： 保險費收據
+</p>
+</div>
+
+<script>
+    function openTab(tabName, elmnt) {
+        var i, container, tablinks;
+        container = document.getElementsByClassName("container");
+        for (i = 0; i < container.length; i++) {
+            container[i].style.display = "none";
+        }
+        tablinks = document.getElementsByClassName("tablink");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].style.backgroundColor = "";
+            tablinks[i].classList.remove("active");
+        }
+        document.getElementById(tabName).style.display = "block";
+        elmnt.classList.add("active");
+    }
+
+    function calculateLoan() {
+        const P = parseFloat(document.getElementById("P").value);
+        const r = parseFloat(document.getElementById("r").value) / 100 / 12;
+        const n = parseInt(document.getElementById("n").value) * 12;
+
+        const M = P * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+        document.getElementById("M").textContent = M.toFixed(2);
+
+        const I = P * r;
+        document.getElementById("I").textContent = I.toFixed(2);
+
+        const C = M - I;
+        document.getElementById("C").textContent = C.toFixed(2);
+
+        const Total = M * n;
+        document.getElementById("Total").textContent = Total.toFixed(2);
+    }
+
+    function calculateTax() {
+        const purchase_price = parseFloat(document.getElementById("purchase_price").value);
+        const sale_price = parseFloat(document.getElementById("sale_price").value);
+        const fees = parseFloat(document.getElementById("fees").value);
+        const land_increase = parseFloat(document.getElementById("land_increase").value);
+        const purchase_date = new Date(document.getElementById("purchase_date").value);
+        const sale_date = new Date(document.getElementById("sale_date").value);
+        const years_held = (sale_date - purchase_date) / (365.25 * 24 * 60 * 60 * 1000);
+        const continuous_residence_years = parseFloat(document.getElementById("continuous_residence_years").value) || 0;
+        const property_type = document.getElementById("property_type").value;
+
+        let profit = sale_price - purchase_price - fees - land_increase;
+        let rate = 0;
+
+        if (property_type === "境內-非自住") {
+            if (years_held < 1) rate = 0.45;
+            else if (years_held < 2) rate = 0.35;
+            else if (years_held < 10) rate = 0.20;
+            else rate = 0.15;
+        } else if (property_type === "境內-自住") {
+            if (continuous_residence_years < 6) {
+                if (years_held < 1) rate = 0.45;
+                else if (years_held < 2) rate = 0.35;
+                else if (years_held < 10) rate = 0.20;
+                else rate = 0.15;
+            } else {
+                if (profit > 400) rate = 0.10;
+            }
+        } else if (property_type === "境內-非自願等") {
+            if (years_held < 10) rate = 0.20;
+            else rate = 0.15;
+        }
+
+        document.getElementById("profit").textContent = profit.toFixed(2);
+        document.getElementById("rate").textContent = (rate * 100).toFixed(2);
+        document.getElementById("tax_due").textContent = (profit * rate).toFixed(2);
+    }
+
+    function calculateRentalIncomeTax() {
+        const monthly_rent = parseFloat(document.getElementById("monthly_rent").value);
+        const annual_rent = monthly_rent * 12;
+        const tax_rate = parseFloat(document.getElementById("tax_rate").value);
+        const income_type = document.getElementById("income_type").value;
+        let rental_income = 0;
+
+        if (income_type === "standard") {
+            rental_income = annual_rent * 0.57;
+        } else {
+            const rental_costs = parseFloat(document.getElementById("rental_costs").value);
+            rental_income = annual_rent - rental_costs;
+        }
+
+        const rental_tax_due = rental_income * tax_rate;
+
+        document.getElementById("rental_income").textContent = rental_income.toFixed(2);
+        document.getElementById("rental_tax_due").textContent = rental_tax_due.toFixed(2);
+    }
+</script>
+</body>
+</html>
